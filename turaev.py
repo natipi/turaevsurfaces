@@ -20,18 +20,23 @@ def cyclic_compare(s1, s2):
 	if n1 != len(s2):
 		return False
 
+	# numbers can appear up to twice in a loop
 	rot = s2.find(s1[0])
+	rot2 = s2.find(s1[0], rot + 1) # look for the possible second instance after rot
 
-	if rot == -1: 
+	if rot == -1:
+		# print "I think rot is -1" 
 		return False
 	
 	for i in range(1,n1):
-		if forward and s1[i] != s2[(i + rot) % n1]:
+		if forward and s1[i] != s2[(i + rot) % n1] and s1[i] != s2[(i + rot2) % n1]:
+			# print "I think position", i, "and position", (i+rot)%n1, "are different"
 			forward = False
-		if backward and s1[i] != s2[(rot - i) % n1]:
+		if backward and s1[i] != s2[(rot - i) % n1] and s1[i] != s2[(rot2 - i) % n1]:
+			# print "I think position", i, "and position", (i-rot)%n1, "are different"
 			backward = False
  
-	return forward or backward
+	return (forward or backward)
 	
 
 # search obj in lst using compare_function
@@ -118,6 +123,7 @@ def find_smoothing(code, smoothing_type):
 	while i < n:
 		loop = find_loop(code,i, smoothing_type)
 		if not search(loop, loops, cyclic_compare):
+			print loop, "is not in", loops
 			loops += [loop]
 		i +=2
 	return loops
