@@ -56,6 +56,7 @@ def maxint(string):
 # general process: get to a crossing, change strand, possibly toggle direction, 
 # move to next crossing according to direction
 # unit tested (5 ish cases)
+# get to a crossing -> check if done -> change strands -> toggle direction -> move
 def find_loop(code, i, smoothing_type):
 	# toggle direction (with or against the grain)
 	forward = True
@@ -68,21 +69,14 @@ def find_loop(code, i, smoothing_type):
 	elif len(smoothing_type) != maxint(code):
 		raise Exception("find_loop: Failed to specify smotthing type for all crossings")
 
-	# keep track of the current crossing to be able to stop once you get
-	# back to the initial crossing
-	initial_crossing = code[i]
-	current_crossing = ""
-
 	# as we traverse a certain circle in the state, we will record it here
 	# in order to count circles later on
-	statecircle = initial_crossing
+	statecircle = code[i]
 	
 	# traversal index
 	j = i
 
-	print "im here"
-
-	while current_crossing != initial_crossing:
+	while True:
 		# Step 1: Change strand
 		# find the other ocurrence of crossing code[j] in code
 		# find returns -1 if not found and the position within the 
@@ -90,10 +84,7 @@ def find_loop(code, i, smoothing_type):
 		j = max(code.find(code[j], 0, j), code.find(code[j], j+1, n))
 
 		if j == -1:
-			print "The Gauss code", code, "only contains one copy of", current_crossing
-			return "error" # find out how to flag errors or something
-
-		print "prev crossing", current_crossing
+			raise Exception("The Gauss code " + code + " only contains one copy of" + code[j])
 
 		# Step 2: possibly toggle direction
 		# int(current_crossing) gives the number of the current crossing
@@ -110,11 +101,12 @@ def find_loop(code, i, smoothing_type):
 			# move backward, wrap around if needed
 			j = (j - 2) % n
 		
-		current_crossing = code[j]
-		statecircle += current_crossing
+		# Step 4: Get to a crossing and record it in the state circle
+		statecircle += code[j]
 
-		print "post crossing", current_crossing, "state circle", statecircle
-	
+		# Step 5: check if done
+		if j == i and forward:	
+			break
 	# the first one gets repeted at the end so we remove it when returning
 	return statecircle[:-1]
 
