@@ -61,6 +61,13 @@ def find_loop(code, i, smoothing_type):
 	forward = True
 	n = len(code)
 
+	# if only "a" or "b" is given as smoothing type, it is the all-A smoothing
+	# or the all-B smoothing
+	if len(smoothing_type) == 1:
+		smoothing_type *= n
+	elif len(smoothing_type) != n:
+		raise Exception("find_loop: Failed to specify smotthing type for all crossings")
+
 	# keep track of the current crossing to be able to stop once you get
 	# back to the initial crossing
 	initial_crossing = code[i]
@@ -73,6 +80,8 @@ def find_loop(code, i, smoothing_type):
 	# traversal index
 	j = i
 
+	print "im here"
+
 	while current_crossing != initial_crossing:
 		# Step 1: Change strand
 		# find the other ocurrence of crossing code[j] in code
@@ -84,8 +93,13 @@ def find_loop(code, i, smoothing_type):
 			print "The Gauss code", code, "only contains one copy of", current_crossing
 			return "error" # find out how to flag errors or something
 
+		print "prev crossing", current_crossing
+
 		# Step 2: possibly toggle direction
-		if (smoothing_type == "a" and code[j+1] == "-") or (smoothing_type == "b" and code[j+1] == "+"):
+		# int(current_crossing) gives the number of the current crossing
+		# and since smoothing_type is indexed at 0 but the crossings are 
+		# indexed at 1, we subract 1
+		if (smoothing_type[int(current_crossing) - 1] == "a" and code[j+1] == "-") or (smoothing_type[int(current_crossing) - 1] == "b" and code[j+1] == "+"):
 			forward = not forward
 
 		# Step 3: move to next crossing according to direction
@@ -98,6 +112,8 @@ def find_loop(code, i, smoothing_type):
 		
 		current_crossing = code[j]
 		statecircle += current_crossing
+
+		print "post crossing", current_crossing, "state circle", statecircle
 	
 	# the first one gets repeted at the end so we remove it when returning
 	return statecircle[:-1]
@@ -113,8 +129,6 @@ def find_smoothing(code, smoothing_type):
 			loops += [loop]
 		i +=2
 	return loops
-
-
 
 def turaev_genus(code):
 	return 0.5*(maxint(code) - len(find_smoothing(code, "a")) - len(find_smoothing(code, "b")) + 2)
