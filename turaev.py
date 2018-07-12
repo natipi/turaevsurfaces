@@ -50,7 +50,8 @@ def maxint(string):
 				maxint = int(character)
 	return maxint
 
-# traverse a single A-smoothing loop starting at index i in the code
+# traverse a single smoothing loop starting at index i in the code
+# smoothing_type indicates whether its all A or all B smoothing
 # returns the crossings touched by the state circle in cyclic order
 # general process: get to a crossing, change strand, possibly toggle direction, 
 # move to next crossing according to direction
@@ -101,7 +102,7 @@ def find_loop(code, i, smoothing_type):
 	# the first one gets repeted at the end so we remove it when returning
 	return statecircle[:-1]
 
-# calculates the amount of circles in the all-A state
+# calculates the amount of circles in the state with smoothing_type 
 def find_smoothing(code, smoothing_type):
 	n = len(code)
 	loops = []
