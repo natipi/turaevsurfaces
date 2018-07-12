@@ -65,7 +65,7 @@ def find_loop(code, i, smoothing_type):
 	# or the all-B smoothing
 	if len(smoothing_type) == 1:
 		smoothing_type *= n
-	elif len(smoothing_type) != n:
+	elif len(smoothing_type) != maxint(code):
 		raise Exception("find_loop: Failed to specify smotthing type for all crossings")
 
 	# keep track of the current crossing to be able to stop once you get
@@ -99,7 +99,7 @@ def find_loop(code, i, smoothing_type):
 		# int(current_crossing) gives the number of the current crossing
 		# and since smoothing_type is indexed at 0 but the crossings are 
 		# indexed at 1, we subract 1
-		if (smoothing_type[int(current_crossing) - 1] == "a" and code[j+1] == "-") or (smoothing_type[int(current_crossing) - 1] == "b" and code[j+1] == "+"):
+		if (smoothing_type[int(code[j]) - 1] == "a" and code[j+1] == "-") or (smoothing_type[int(code[j]) - 1] == "b" and code[j+1] == "+"):
 			forward = not forward
 
 		# Step 3: move to next crossing according to direction
