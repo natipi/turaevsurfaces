@@ -61,6 +61,7 @@ def find_crossing(thing, lst, start = 0, end = -1):
 # finds maximum integer appearing in a string. returns -1 if no integers
 def maxint(string):
 	maxint = -1
+	print "hello"
 	for character in string:
 		if character.isdigit():
 			if int(character) > maxint:
