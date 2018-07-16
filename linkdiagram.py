@@ -13,7 +13,7 @@ import graph
 # Checks if Gauss code is valid
 # TODO: could be made way more efficient. Right now I'm going through each pair 
 #       of numbers twice
-def gc_is_valid(gc):
+def str_gc_is_valid(gc):
 	i = 0
 	n = len(gc)
 	while i < n:
@@ -24,24 +24,51 @@ def gc_is_valid(gc):
 		i += 2
 	return True
 
+def lst_gc_is_valid(gc):
+	i = 0
+	n = len(gc)
+	while i < n:
+		j = max(find_crossing(gc[i], gc, 0, i), find_crossing(gc[i], gc, i+1, n))
+		if j < 0: return False
+		if code[i][-1] != code[j][-1]: return False
+	return True
+
+# reduce str gc
+# def reduce(gc):
+# 	i = 0 
+# 	while i < len(gc) - 2:
+# 		j = (i + 2) % len(gc)
+# 		if gc[i] == gc[j]: 
+# 			gc = gc[0:i] + gc[j + 2:]
+# 		else:
+# 			i += 2
+# 	if gc[-2] == gc[0]:
+# 		gc = gc[2:-2]
+# 	return gc
+
+# takes in lst gc and reduces it
 def reduce(gc):
-	i = 0 
-	while i < len(gc) - 2:
-		j = (i + 2) % len(gc)
-		if gc[i] == gc[j]: 
-			gc = gc[0:i] + gc[j + 2:]
-		else:
-			i += 2
-	if gc[-2] == gc[0]:
-		gc = gc[2:-2]
+	i = 0
+	while i < len(gc) - 1:
+		j = (i + 1) % len(gc)
+		if gc[i][0] == gc[j][0]:
+			gc = gc[0:i] + gc[j + 1:]
+		else: 
+			i += 1
+	if gc[-1][0] == gc[0][0]:
+		gc = gc[1:-1]
 	return gc
 
 # makes a diagram alternating by changing crossings
+# takes in lst format gauss code
 def make_alternating(gc):
+	i = 0
+	n = len(gc)
+
 
 # forgets overs and unders, i.e. turns Gauss code from a "1U+2O-" format to a 
 # "1+2-" format
-def forget_crossings(gc):
+# def forget_crossings(gc):
 
 
 # def gc_is_virtual(gc):
@@ -68,13 +95,13 @@ class LinkDiagram:
 		n = len(gc)
 		while i < n:
 			# Find other instance of number i
-			j = max(gc.find(gc[i], 0, i), gc.find(gc[i], i+1, n))
+			j = max(find_crossing(gc[i], gc, 0, i), find_crossing(gc[i], gc, i+1, n))
 			# OUOUOU
 			if (j - i) % 2 == 0: return False
 		return True 
 
 	def turaev_genus(self):
-		return 0.5*(maxint(code) - len(find_smoothing(code, "a")) - len(find_smoothing(code, "b")) + 2)
+		return 0.5*(turaev.crossing_number(self.gauss_code) - len(turaev.find_smoothing(self.gauss_code, "a")) - len(turaev.find_smoothing(self.gauss_code, "b")) + 2)
 
 # Classical link diagrams
 class PlanarDiagram(LinkDiagram):
