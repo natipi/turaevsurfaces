@@ -121,5 +121,5 @@ class PlanarDiagram(LinkDiagram):
 		# self.dual_graph
 
 	def set_gauss_code(self, gc):
-		self.gauss_code = gc #TODO: do this with a setter function for the parent class?
+		self.gauss_code = reduce(gc) #TODO: do this with a setter function for the parent class?
 		# self.build_dual_graph()
