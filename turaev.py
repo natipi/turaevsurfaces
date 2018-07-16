@@ -10,6 +10,7 @@
 
 # determines if two strings are a cyclic permutation of each other
 # unit tested (vaguely)
+# for use with comparing state cycles
 def cyclic_compare(s1, s2):
 	# keep track of whether they are the same in the same or opposite direction
 	forward = True
@@ -55,7 +56,7 @@ def find_crossing(thing, lst, start = 0, end = -1):
 	if end == -1: n = len(lst)
 	else: n = end 
 	for i in range(start, n): 
-		if same_crossing(thing, list[i]): return i 
+		if same_crossing(thing, lst[i]): return i 
 	return -1
 
 # finds maximum integer appearing in a string. returns -1 if no integers

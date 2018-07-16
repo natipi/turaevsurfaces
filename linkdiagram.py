@@ -64,6 +64,9 @@ def reduce(gc):
 def make_alternating(gc):
 	i = 0
 	n = len(gc)
+	if n % 2 == 1: raise Exception("Gauss code " + str(gc) + " cannot be made alternating.")
+	for i in range(1, n):
+		if gc[i-1][-2]
 
 
 # forgets overs and unders, i.e. turns Gauss code from a "1U+2O-" format to a 
