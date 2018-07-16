@@ -40,11 +40,23 @@ def cyclic_compare(s1, s2):
 	
 
 # search obj in lst using compare_function
-def search(obj, lst, compare_function):
+def contained(obj, lst, compare_function):
 	for thing in lst:
 		if compare_function(obj, thing): return True
 	
 	return False
+
+# determines if entries a,b in gauss code have the same crossing
+def same_crossing(a ,b):
+	return a[0] == b[0]
+
+# taked Gauss code entry and finds Gauss code entry with same crossing 
+def find_crossing(thing, lst, start = 0, end = -1):
+	if end == -1: n = len(lst)
+	else: n = end 
+	for i in range(start, n): 
+		if same_crossing(thing, list[i]): return i 
+	return -1
 
 # finds maximum integer appearing in a string. returns -1 if no integers
 def maxint(string):
@@ -53,6 +65,14 @@ def maxint(string):
 		if character.isdigit():
 			if int(character) > maxint:
 				maxint = int(character)
+	return maxint
+
+# finds crossing number of a Gauss code
+def crossing_number(gc):
+	maxint = -1
+	for entry in gc:
+		if int(entry[0]) > maxint:
+				maxint = int(entry[0])
 	return maxint
 
 # traverse a single smoothing loop starting at index i in the code
@@ -76,7 +96,7 @@ def find_loop(code, i, smoothing_type):
 
 	# as we traverse a certain circle in the state, we will record it here
 	# in order to count circles later on
-	statecircle = code[i]
+	statecircle = code[i][0]
 	
 	# traversal index
 	j = i
@@ -86,7 +106,7 @@ def find_loop(code, i, smoothing_type):
 		# find the other ocurrence of crossing code[j] in code
 		# find returns -1 if not found and the position within the 
 		# global string if found within the specified substring
-		j = max(code.find(code[j], 0, j), code.find(code[j], j+1, n))
+		j = max(find_crossing(code[j], code, 0, j), find_crossing(code[j], code, j+1, n))
 
 		if j == -1:
 			raise Exception("The Gauss code " + code + " only contains one copy of" + code[j])
@@ -95,16 +115,16 @@ def find_loop(code, i, smoothing_type):
 		# int(current_crossing) gives the number of the current crossing
 		# and since smoothing_type is indexed at 0 but the crossings are 
 		# indexed at 1, we subract 1
-		if (smoothing_type[int(code[j]) - 1] == "a" and code[j+1] == "-") or (smoothing_type[int(code[j]) - 1] == "b" and code[j+1] == "+"):
+		if (smoothing_type[int(code[j][0]) - 1] == "a" and code[j][-1] == "-") or (smoothing_type[int(code[j][0]) - 1] == "b" and code[j][-1] == "+"):
 			forward = not forward
 
 		# Step 3: move to next crossing according to direction
 		if forward: 
 			# move forward, wrap around the Gauss code if needed
-			j = (j + 2) % n 
+			j = (j + 1) % n 
 		else: 
 			# move backward, wrap around if needed
-			j = (j - 2) % n
+			j = (j - 1) % n
 		
 		# Step 4: Get to a crossing and record it in the state circle
 		statecircle += code[j]
@@ -121,8 +141,8 @@ def find_smoothing(code, smoothing_type):
 	loops = []
 	i = 0
 	while i < n:
-		loop = find_loop(code,i, smoothing_type)
-		if not search(loop, loops, cyclic_compare):
+		loop = find_loop(code, i, smoothing_type)
+		if not contained(loop, loops, cyclic_compare):
 			print loop, "is not in", loops
 			loops += [loop]
 		i +=2
