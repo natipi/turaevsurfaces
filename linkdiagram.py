@@ -8,6 +8,7 @@
 # All of these use reduced Gauss codes (no obvious RI moves)
 
 import turaev
+import graph
 
 # Checks if Gauss code is valid
 # TODO: could be made way more efficient. Right now I'm going through each pair 
@@ -34,6 +35,14 @@ def reduce(gc):
 	if gc[-2] == gc[0]:
 		gc = gc[2:-2]
 	return gc
+
+# makes a diagram alternating by changing crossings
+def make_alternating(gc):
+
+# forgets overs and unders, i.e. turns Gauss code from a "1U+2O-" format to a 
+# "1+2-" format
+def forget_crossings(gc):
+
 
 # def gc_is_virtual(gc):
 
@@ -69,9 +78,18 @@ class LinkDiagram:
 
 # Classical link diagrams
 class PlanarDiagram(LinkDiagram):
+	def build_dual_graph(self):
+		alt_gc = 
+
 
 	def __init__(self, gc, safe=False):
 		LinkDiagram.__init__(self, gc, safe)
 
+		self.build_dual_graph()
 		# self.atomic_regions
 		# self.holes
+		# self.dual_graph
+
+	def set_gauss_code(self, gc):
+		self.gauss_code = gc #TODO: do this with a setter function for the parent class?
+		self.build_dual_graph()
