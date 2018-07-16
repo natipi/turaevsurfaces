@@ -8,43 +8,12 @@
 # As such, the Gauss code will be of the format "1-2+3+7-(...)", only indicating
 # crossing and writhe. 
 
-# determines if two strings are a cyclic permutation of each other
-# unit tested (vaguely)
-# for use with comparing state cycles
-def cyclic_compare(s1, s2):
-	# keep track of whether they are the same in the same or opposite direction
-	forward = True
-	backward = True
-	
-	n1 = len(s1)
-
-	if n1 != len(s2):
-		return False
-
-	# numbers can appear up to twice in a loop
-	rot = s2.find(s1[0])
-	rot2 = s2.find(s1[0], rot + 1) # look for the possible second instance after rot
-
-	if rot == -1:
-		# print "I think rot is -1" 
-		return False
-	
-	for i in range(1,n1):
-		if forward and s1[i] != s2[(i + rot) % n1] and s1[i] != s2[(i + rot2) % n1]:
-			# print "I think position", i, "and position", (i+rot)%n1, "are different"
-			forward = False
-		if backward and s1[i] != s2[(rot - i) % n1] and s1[i] != s2[(rot2 - i) % n1]:
-			# print "I think position", i, "and position", (i-rot)%n1, "are different"
-			backward = False
- 
-	return (forward or backward)
-	
+from linkdiagram import *
 
 # search obj in lst using compare_function
 def contained(obj, lst, compare_function):
 	for thing in lst:
 		if compare_function(obj, thing): return True
-	
 	return False
 
 # determines if entries a,b in gauss code have the same crossing
@@ -70,11 +39,50 @@ def maxint(string):
 
 # finds crossing number of a Gauss code
 def crossing_number(gc):
+	if len(gc) == 0: return 0
 	maxint = -1
 	for entry in gc:
-		if int(entry[0]) > maxint:
-				maxint = int(entry[0])
+		if entry[0] > maxint:
+				maxint = entry[0]
 	return maxint
+
+def lst_find(thing, lst, start = 0, end = -1):
+	if end == -1: n = len(lst)
+	else: n = end 
+	for i in range(start, n): 
+		if thing == lst[i]: return i 
+	return -1
+
+# determines if two lists are a cyclic permutation of each other
+# unit tested (vaguely)
+# for use with comparing state cycles
+def cyclic_compare(s1, s2):
+	# keep track of whether they are the same in the same or opposite direction
+	forward = True
+	backward = True
+	
+	n1 = len(s1)
+
+	if n1 != len(s2):
+		return False
+
+	# numbers can appear up to twice in a loop
+	rot = lst_find(s1[0], s2)
+	rot2 = lst_find(s1[0], s2, rot + 1) # look for the possible second instance after rot
+
+	if rot == -1:
+		# print "I think rot is -1" 
+		return False
+	
+	for i in range(1,n1):
+		if forward and s1[i] != s2[(i + rot) % n1] and s1[i] != s2[(i + rot2) % n1]:
+			# print "I think position", i, "and position", (i+rot)%n1, "are different"
+			forward = False
+		if backward and s1[i] != s2[(rot - i) % n1] and s1[i] != s2[(rot2 - i) % n1]:
+			# print "I think position", i, "and position", (i-rot)%n1, "are different"
+			backward = False
+ 
+	return (forward or backward)
 
 # traverse a single smoothing loop starting at index i in the code
 # smoothing_type indicates whether its all A or all B smoothing
@@ -92,12 +100,12 @@ def find_loop(code, i, smoothing_type):
 	# or the all-B smoothing
 	if len(smoothing_type) == 1:
 		smoothing_type *= n
-	elif len(smoothing_type) != maxint(code):
+	elif len(smoothing_type) != crossing_number(code):
 		raise Exception("find_loop: Failed to specify smotthing type for all crossings")
 
 	# as we traverse a certain circle in the state, we will record it here
 	# in order to count circles later on
-	statecircle = code[i][0]
+	statecircle = [code[i][0]]
 	
 	# traversal index
 	j = i
@@ -128,7 +136,7 @@ def find_loop(code, i, smoothing_type):
 			j = (j - 1) % n
 		
 		# Step 4: Get to a crossing and record it in the state circle
-		statecircle += code[j]
+		statecircle += [code[j][0]]
 
 		# Step 5: check if done
 		if j == i and forward:	
@@ -150,4 +158,6 @@ def find_smoothing(code, smoothing_type):
 	return loops
 
 def turaev_genus(code):
-	return 0.5*(maxint(code) - len(find_smoothing(code, "a")) - len(find_smoothing(code, "b")) + 2)
+	gc = reduce(code)
+	if len(gc) == 0: return 0.0
+	else: return 0.5*(crossing_number(gc) - len(find_smoothing(gc, "a")) - len(find_smoothing(gc, "b")) + 2)

@@ -55,18 +55,19 @@ def reduce(gc):
 			gc = gc[0:i] + gc[j + 1:]
 		else: 
 			i += 1
-	if gc[-1][0] == gc[0][0]:
-		gc = gc[1:-1]
+	if len(gc) > 0:
+		if gc[-1][0] == gc[0][0]:
+			gc = gc[1:-1]
 	return gc
 
 # makes a diagram alternating by changing crossings
 # takes in lst format gauss code
-def make_alternating(gc):
-	i = 0
-	n = len(gc)
-	if n % 2 == 1: raise Exception("Gauss code " + str(gc) + " cannot be made alternating.")
-	for i in range(1, n):
-		if gc[i-1][-2]
+# def make_alternating(gc):
+# 	i = 0
+# 	n = len(gc)
+# 	if n % 2 == 1: raise Exception("Gauss code " + str(gc) + " cannot be made alternating.")
+# 	for i in range(1, n):
+# 		if gc[i-1][-2]
 
 
 # forgets overs and unders, i.e. turns Gauss code from a "1U+2O-" format to a 
@@ -108,18 +109,17 @@ class LinkDiagram:
 
 # Classical link diagrams
 class PlanarDiagram(LinkDiagram):
-	def build_dual_graph(self):
-		alt_gc = 
-
+	# def build_dual_graph(self):
+		# alt_gcq = 
 
 	def __init__(self, gc, safe=False):
 		LinkDiagram.__init__(self, gc, safe)
 
-		self.build_dual_graph()
+		# self.build_dual_graph()
 		# self.atomic_regions
 		# self.holes
 		# self.dual_graph
 
 	def set_gauss_code(self, gc):
 		self.gauss_code = gc #TODO: do this with a setter function for the parent class?
-		self.build_dual_graph()
+		# self.build_dual_graph()
