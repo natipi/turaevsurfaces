@@ -31,7 +31,7 @@ class ColoredGraph:
 		for edge in edge_list:
 			self.edges[edge] = "None"
 
-	def color_edge(key, color):
+	def color_edge(edge, color):
 		if key in self.edges: self.edges[key] = color
 		else: raise Exception("Edge "+str(key)+" does not exist.")
 

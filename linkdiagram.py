@@ -10,6 +10,41 @@
 import turaev
 import graph
 
+from itertools import izip
+
+# go through all pairs of a list
+def pairwise(iterable):
+    "s -> (s0, s1), (s2, s3), (s4, s5), ..."
+    a = iter(iterable)
+    return izip(a, a)
+
+# the cycles are lists
+def abut(cycle1, cycle2):
+	for i in cycle1:
+		if i in cycle2: return True
+	return False
+
+# decomposes cycle into a sum of elements
+# every time we find a repeated crossing that is a valid split (i.e. is in "splits") 
+# in cycle, we decompose along it
+def decompose(cycle, splits):
+	found = False
+	i = 0
+	n = len(cycle)
+	# while we haven't found a repeated element
+	while not found and i < n:
+		j = turaev.lst_find(cycle[i], cycle, i+1)
+		if j != -1 and cycle[j] in splits: 
+			found = True
+		else: 
+			i += 1 
+	# if no repeats, return cycleq
+	if i == n: 
+		return [cycle]
+	else:
+		return decompose(cycle[i:j], splits) + decompose(cycle[j:] + cycle[:i], splits)
+
+
 # Checks if Gauss code is valid
 # TODO: could be made way more efficient. Right now I'm going through each pair 
 #       of numbers twice
@@ -118,8 +153,8 @@ class LinkDiagram:
 
 # Classical link diagrams
 class PlanarDiagram(LinkDiagram):
-	self.dual_graph = graph.ColoredGraph()
-
+	# self.dual_graph = graph.ColoredGraph()
+ 
 	def build_dual_graph(self):
 		gc_alter = make_alternating(gc)
 		altern_a_smthing = find_smoothing(gc, "a")
@@ -127,17 +162,40 @@ class PlanarDiagram(LinkDiagram):
 		print alter_a_smthing
 		self.dual_graph.set_vertices(altern_a_smthing + altern_b_smthing)
 
+		# One set of edges links A smoothing circles that abut each other
+		for a,b in pairwise(altern_a_smthing):
+			if abut(a,b): self.dual_graph.add_edge(a,b)
+		# One set of edges links B smoothing circles that abut each other
+		for a,b in pairwise(altern_b_smthing):
+			if abut(a,b): self.dual_graph.add_edge(a,b)
 
+		# Now to color it
+		# for red (A-smoothing) circles, cut accross the crossings that didn't change relative to the alternating gauss code
+		# for blue (B-smoothing), cut accross those that did change
+		# should probably make sure that all the code is right and len(gc) = len(gc_alter) at this pt
+		a_cuts = []
+		b_cuts = []
+		for i in range(len(gc)):
+			if gc_alter[i][1] == gc[i][1]: a_cuts += [gc[i][0]]
+			else: b_cuts +=[gc[i][0]]
+
+		for region in self.a_smoothing:
+			basis_decomposition = decompose(region, a_cuts)
+			# find these regions in the vertex list, in the order they appear in the cycle, using cyclic compare, and color some vertices
+			# OH LOL WE DONT EVEN NEED THE GRAPH
 
 
 	def __init__(self, gc, safe=False):
 		LinkDiagram.__init__(self, gc, safe)
-
-		# self.build_dual_graph()
-		# self.atomic_regions
+		self.a_smoothing = turaev.find_smoothing(self.gauss_code, "a")
+		self.b_smoothing = turaev.find_smoothing(self.gauss_code, "b")
+		self.dual_graph = graph.ColoredGraph()
+		self.build_dual_graph()
+		# self.atomic_regions = self. DONT NEED THIS BECAUSE THEYRE JUST THE VERTICES OF THE DUAL GRAPH
 		# self.holes
 		# self.dual_graph
 
 	def set_gauss_code(self, gc):
 		self.gauss_code = turaev.reduce_code(gc) #TODO: do this with a setter function for the parent class?
 		# self.build_dual_graph()
+
