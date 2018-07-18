@@ -11,6 +11,7 @@ import turaev
 import graph
 
 from itertools import izip
+from copy import deepcopy # copy lists
 
 # go through all pairs of a list
 def pairwise(iterable):
@@ -19,9 +20,35 @@ def pairwise(iterable):
     return izip(a, a)
 
 # the cycles are lists
+# returns whether they abut at a crossing
 def abut(cycle1, cycle2):
 	for i in cycle1:
 		if i in cycle2: return True
+	return False
+
+# the cycles are lsits
+# returns whether they share an arc
+def share_arc(cycle1, cycle2):
+	n = len(cycle1)
+	m = len(cycle2)
+	i = 0
+	while i < n:
+		# arc = cycle1[i:(i + 2) % n]
+		# wanna find this arc in cycle2
+		j = turaev.lst_find(cycle1[i], cycle2)
+		k = turaev.lst_find(cycle1[i], cycle2, j+1)
+		if j == -1 and k == -1: 
+			i += 1
+		elif j >= 0:
+			if (cycle2[(j + 1) % m] == cycle1[(i + 1) % n]) or (cycle2[(j - 1) % m] == cycle1[(i + 1) % n]): 
+				return True
+			else: 
+				i += 1
+		elif k >= 0:
+			if (cycle2[(k + 1) % m] == cycle1[(i + 1) % n]) or (cycle2[(k - 1) % m] == cycle1[(i + 1) % n]): 
+				return True
+			else: 
+				i += 1
 	return False
 
 # decomposes cycle into a sum of elements
@@ -101,7 +128,7 @@ def turaev_orientable(gc, length):
 # makes a diagram alternating by changing crossings (and writhe when crossing type [over <-> under] is changed)
 # takes in lst format gauss code
 def make_alternating(gc):
-	gc = turaev.process_code(gc)
+	# gc = turaev.process_code(gc)
 	length = len(gc)
 	if not turaev_orientable(gc, length):
 		raise Exception("The following Gauss code was attempted to be made alternating:" + gc + ". It is not orientable.")
@@ -156,36 +183,57 @@ class PlanarDiagram(LinkDiagram):
 	# self.dual_graph = graph.ColoredGraph()
  
 	def build_dual_graph(self):
-		gc_alter = make_alternating(gc)
-		altern_a_smthing = find_smoothing(gc, "a")
-		altern_b_smthing = find_smoothing(gc, "b")
-		print alter_a_smthing
-		self.dual_graph.set_vertices(altern_a_smthing + altern_b_smthing)
+		# lists are passed by reference so I had to use deepcopy to pass by value
+		gc_alter = make_alternating(deepcopy(self.gauss_code))
+		print str(gc_alter)
+		altern_a_smthing = turaev.find_smoothing(gc_alter, "a")
+		altern_b_smthing = turaev.find_smoothing(gc_alter, "b")
+		print "Alternating a smoothing: "+str(altern_a_smthing)
+		print "Alternating b smoothing: "+str(altern_b_smthing)
+		self.dual_graph.set_uncolored_vertices(altern_a_smthing + altern_b_smthing)
 
-		# One set of edges links A smoothing circles that abut each other
-		for a,b in pairwise(altern_a_smthing):
-			if abut(a,b): self.dual_graph.add_edge(a,b)
-		# One set of edges links B smoothing circles that abut each other
-		for a,b in pairwise(altern_b_smthing):
-			if abut(a,b): self.dual_graph.add_edge(a,b)
+		# add edge between each pair of regions that are connected by an arc
+		# note that this is only true if they are from opposite smoothings in the alterating thing
+		for a_region in altern_a_smthing:
+			for b_region in altern_b_smthing:
+				if share_arc(a_region, b_region):
+					self.dual_graph.add_edge(a_region, b_region)
 
-		# Now to color it
+		# Now to color the vertices
 		# for red (A-smoothing) circles, cut accross the crossings that didn't change relative to the alternating gauss code
 		# for blue (B-smoothing), cut accross those that did change
-		# should probably make sure that all the code is right and len(gc) = len(gc_alter) at this pt
+		# should probably make sure that all the code is right and len(self.gauss_cde) = len(gc_alter) at this pt
 		a_cuts = []
 		b_cuts = []
-		for i in range(len(gc)):
-			if gc_alter[i][1] == gc[i][1]: a_cuts += [gc[i][0]]
-			else: b_cuts +=[gc[i][0]]
+		for i in range(len(self.gauss_code)):
+			if gc_alter[i][1] == self.gauss_code[i][1]: 
+				print str(gc_alter[i])+"and"+str(self.gauss_code[i])
+				a_cuts += [self.gauss_code[i][0]]
+			else: b_cuts +=[self.gauss_code[i][0]]
+
+		print "B cuts: "+str(b_cuts)
 
 		for region in self.a_smoothing:
+			# decompose this a_smoothing (red) region into its constituent atomic regions
 			basis_decomposition = decompose(region, a_cuts)
-			# find these regions in the vertex list, in the order they appear in the cycle, using cyclic compare, and color some vertices
-			# OH LOL WE DONT EVEN NEED THE GRAPH
-
+			print "Basis decomposition of "+ str(region)+" in A smoothing:"
+			print "\t"+str(basis_decomposition)
+			for loop in basis_decomposition:
+				# find these regions in the vertex list, in the order they appear in the cycle, using cyclic compare, and color the vertices
+				for vertex in self.dual_graph.vertices.keys():
+					if turaev.cyclic_compare(loop, vertex): 
+						self.dual_graph.color_vertex(vertex, "red")
+		for region in self.b_smoothing:
+			basis_decomposition = decompose(region, b_cuts)
+			print "Basis decomposition of "+ str(region)+" in B smoothing:"
+			print "\t"+str(basis_decomposition)
+			for loop in basis_decomposition:
+				for vertex in self.dual_graph.vertices.keys():
+					if turaev.cyclic_compare(loop, vertex):
+						self.dual_graph.color_vertex(vertex, "blue")
 
 	def __init__(self, gc, safe=False):
+		# super(PlanarDiagram, self).__init__(gc, safe)
 		LinkDiagram.__init__(self, gc, safe)
 		self.a_smoothing = turaev.find_smoothing(self.gauss_code, "a")
 		self.b_smoothing = turaev.find_smoothing(self.gauss_code, "b")
@@ -199,3 +247,14 @@ class PlanarDiagram(LinkDiagram):
 		self.gauss_code = turaev.reduce_code(gc) #TODO: do this with a setter function for the parent class?
 		# self.build_dual_graph()
 
+	def find_holes(self):
+		holes = []
+		for vertex in self.dual_graph.vertices.keys():
+			if len(self.dual_graph.vertices[vertex]) == 0:
+				holes += [vertex]
+			# elif len(self.dual_graph.vertices[vertex]) == 1:
+			# 	raise Exception("Vertex "+str(vertex)+" has only one side capped off (only one color).")
+		return holes 
+
+
+		# I will choose the outside to be whichever one has 1 in it and is longestt

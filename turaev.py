@@ -151,10 +151,11 @@ def find_smoothing(code, smoothing_type):
 	i = 0
 	while i < n:
 		loop = find_loop(code, i, smoothing_type)
+		print loop
 		if not contained(loop, loops, cyclic_compare):
-			# print loop, "is not in", loops
+			print loop, "is not in", loops
 			loops += [loop]
-		i +=2
+		i +=1
 	return loops
 
 #performs all trivial type 1 reidemeister simplifications.

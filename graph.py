@@ -12,15 +12,17 @@ class ColoredGraph:
 
 	def __init__(self):
 		# self.dictionary = {}
-		self.vertices = []
+		self.vertices = {}
 		self.edges = {}
 	
-	def set_vertices(vertices):	
-		self.vertices = vertices
+	def set_uncolored_vertices(self, vertex_list):	
 		# order lexicographically
-		self.vertices.sort()
+		vertex_list.sort()
 
-	def set_uncolored_edges(edge_list, safe=False):
+		for vertex in vertex_list:
+			self.vertices[tuple(vertex)] = []
+
+	def set_uncolored_edges(self, edge_list, safe=False):
 		if safe:
 			if self.vertices == []:
 				raise Exception("Empty vertex set, cannot check validity of edges.")
@@ -31,9 +33,20 @@ class ColoredGraph:
 		for edge in edge_list:
 			self.edges[edge] = "None"
 
-	def color_edge(edge, color):
-		if key in self.edges: self.edges[key] = color
-		else: raise Exception("Edge "+str(key)+" does not exist.")
+	def color_edge(self, edge, color):
+		if edge in self.edges: self.edges[edge] = color
+		else: raise Exception("Edge "+str(edge)+" does not exist.")
 
-	def add_edge(node1, node2, color = "None"):
-		self.edges[(min(node1, node2), max(node1, node2))] = color 
+	def add_edge(self, node1, node2, color = "None"):
+		self.edges[(tuple(min(node1, node2)), tuple(max(node1, node2)))] = color 
+
+	def color_vertex(self, vertex, color):
+		if vertex in self.vertices: self.vertices[vertex] += [color]
+		else: raise Exception("Vertex "+str(vertex)+" does not exist.")
+
+	def add_vertex(self, vertex, color="None"):
+		if color == "None":	
+			self.vertices[vertex] = []
+		else: 
+			self.vertices[vertex] = [color]
+
