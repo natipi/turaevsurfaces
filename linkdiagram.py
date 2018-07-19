@@ -383,7 +383,7 @@ class PlanarDiagram(LinkDiagram):
 			# for each hole, find shortest path to outside. then add along the meeting faces of the vertices in the path. 
 			# be conscious that multiple meridians could get looped on the same arc
 			# the genus 1 case is different than the greater genus case! the genus 0 case is also different
-			
+
 			for edge in meridian_path:
 				new_gc_ln = len(new_gc)
 				new_gc_crossing_num = turaev.crossing_number(new_gc)
@@ -395,53 +395,144 @@ class PlanarDiagram(LinkDiagram):
 				i = turaev.find_crossing(arc[0], new_gc)
 				j = turaev.find_crossing(arc[0], new_gc, i+1)
 				# figure out which is the arc endpoint on the left and right at the place where the arc occurs in the Gauss code
-				if turaev.same_crossing(arc[1], new_gc[i+1]):
+				# same_crossing takes tuple inputs (num, "O/U", "+/-")
+				if turaev.same_crossing((arc[1],"","" ), new_gc[i+1]):
 					left, right = i, i+1 
-				elif turaev.same_crossing(arc[1], new_gc[(i-1) % new_gc_ln]):
+				elif turaev.same_crossing((arc[1],"","" ), new_gc[(i-1) % new_gc_ln]):
 					left, right = (i-1) % new_gc_ln, i
-				elif turaev.same_crossing(arc[1], new_gc[(j+1) % new_gc_ln]):
+				elif turaev.same_crossing((arc[1],"","" ), new_gc[(j+1) % new_gc_ln]):
 					left, right = j, (j+1) % new_gc_ln
-				elif turaev.same_crossing(arc[1], new_gc[j-1]):
+				elif turaev.same_crossing((arc[1],"","" ), new_gc[j-1]):
 					left, right = j-1, j
 
 
 				if (prev_left, prev_right) == (-1,-1):
-					new_gc = new_gc[:left+1] + [(new_gc_crossing_num + 1, 'O', '+'), (new_gc_crossing_num + 2, 'U', '+')] + new_gc[(n if right == 0 else right):] 
+					new_gc = new_gc[:left+1] + [(new_gc_crossing_num + 1, 'O', '+'), (new_gc_crossing_num + 2, 'U', '+')] + new_gc[(new_gc_ln if right == 0 else right):] 
 					gc_of_the_meridian = [(new_gc_crossing_num + 1, 'U', '+')] + gc_of_the_meridian + [(new_gc_crossing_num + 2, 'O', '+')]
 				# if the cyclic order in edge[0] is prev_left->prev_right->left->right, then we add U-O- to the original knot component
 				elif cyclically_ordered_sublist_of_consecutive_pairs([new_gc[prev_left][0],new_gc[prev_right][0],new_gc[left][0], new_gc[right][0]], arc[0]):
-					new_gc = new_gc[:left+1] + [(new_gc_crossing_num + 1, 'U', '-'), (new_gc_crossing_num + 2, 'O', '-')] + new_gc[(n if right == 0 else right):] 
+					new_gc = new_gc[:left+1] + [(new_gc_crossing_num + 1, 'U', '-'), (new_gc_crossing_num + 2, 'O', '-')] + new_gc[(new_gc_ln if right == 0 else right):] 
 					gc_of_the_meridian = [(new_gc_crossing_num + 2, 'U', '-')] + gc_of_the_meridian + [(new_gc_crossing_num + 1, 'O', '-')]
 				# if the cyclic order in edge[0] is prev_left->prev_right->right->left, then we add O+U+ to the original knot component
 				elif cyclically_ordered_sublist_of_consecutive_pairs([new_gc[prev_left][0],new_gc[prev_right][0], new_gc[right][0],new_gc[left][0]], arc[0]):
-					new_gc = new_gc[:left+1] + [(new_gc_crossing_num + 1, 'O', '+'), (new_gc_crossing_num + 2, 'U', '+')] + new_gc[(n if right == 0 else right):] 
+					new_gc = new_gc[:left+1] + [(new_gc_crossing_num + 1, 'O', '+'), (new_gc_crossing_num + 2, 'U', '+')] + new_gc[(new_gc_ln if right == 0 else right):] 
 					gc_of_the_meridian = [(new_gc_crossing_num + 1, 'U', '+')] + gc_of_the_meridian + [(new_gc_crossing_num + 2, 'O', '+')]	
 
 				prev_left, prev_right = left, right
 
-			gc_of_the_longitude = []
 
 			# for a consecutive triple of crossings a,b,c around the hole, we can find whether the longitude goes under or over b
 			# if a,b,c all appear consecutively in a red circle, b is a red crossing
 			# ELSE if a,b and b,c are in two different red circles or two disjoint portions of a red circle, b is a blue crossing (putting this else after the previous if is important, see knot 9_42)
 			# else if a,b,c appear consecutively in a blue circle, b is a blue crossing
 			# else if a,b and b,c appear on two different blue circles or two disjoint portions of a blue circle, b is a red crossing
-			
+			# i think these criteria only work for crossings around a hole (see that one 8 crossing knot that gives some stacked red regions)
+			# ALSO i think we dont need the last two else ifs? so I'm not gonna put them in for now
+
+			# the orientation of the longitude will be the same as the orientation of the hole
+			# writhe depends on the orientation of the knot
+
+			gc_of_the_longitude = []
+
 			# for each crossing b in the hole
-			# i = 0
-			# n = len(self.holes[0])
-			# for i in range(n):
-			# 	b = self.holes[0][i]
-			# 	a = self.holes[0][(i-1) % n]
-			# 	c = self.holes[0][(i+1) % n]
+			i = 0
+			n = len(self.holes[0])
+			for i in range(n):
+				new_gc_ln = len(new_gc)
+				new_gc_crossing_num = turaev.crossing_number(new_gc)
 
-			# 	# consec in a red circle
-			# 	if arc_in_circles([a,b,c], self.a_smoothing):
-			# 		print "B is red"
-			# 	elif arc_in_circles([a,b], self.a_smoothing)
+				b = self.holes[0][i]
+				a = self.holes[0][(i-1) % n]
+				c = self.holes[0][(i+1) % n]
 
-			# NOPE THIS IS INCORRECT THIS DOESNT DETERMINE THE COLOR
+				# z comes before a so we can look at the color of a and see if a->b changed
+				z = self.holes[(i-2) % n]
 
+				# consec in a red circle
+				if arc_in_circles([a,b,c], self.a_smoothing):
+					# B IS RED
+					if arc_in_circles([z,a,b], self.a_smoothing):
+						# A is also red, do nothing
+						pass
+					else:
+						# A IS BLUE
+						# now the longitude has to go under on the A side and over on the B side of the arc
+						# if a is on the left in the Gauss code and B is on the right, writhe is positive on both crossings, otherwise it is negative
+						# now when determining where a and b are, I have to take into account meridian intersections manifesting in the gauss code
+						# so any crossings that is greater than self.crossing_number should be ignored
+						# actually though maybe i can just find a, b in the original gauss code 
+
+						i = turaev.find_crossing(a, self.gauss_code)
+						j = turaev.find_crossing(a, self.gauss_code, i+1)
+						if turaev.same_crossing((b,"","" ), self.gauss_code[i+1]):
+							# they appear on the first instance of a, a is left, b is right
+							i = turaev.find_crossing(a, new_gc)
+							# a -> new over + -> new under + -> possibly some meridian stuff -> b
+							new_gc = new_gc[:i+1] + [(new_gc_crossing_num + 1, 'O', '+'), (new_gc_crossing_num + 2, 'U', '+')] + new_gc[i+1:] 
+							# for longitude gc add first the a side then the b side
+							gc_of_the_longitude += [(new_gc_crossing_num + 1, 'U', '+'), (new_gc_crossing_num + 2, 'O', '+')]
+						elif turaev.same_crossing((b,"","" ), self.gauss_code[(i-1) % len(self.gauss_code)]):
+							# they appear on the first instance of a, b is left, a is right
+							i = turaev.find_crossing(a, new_gc)
+							# b -> possibly some meridian stuff -> new under - -> new over - -> a
+							new_gc = new_gc[:i] + [(new_gc_crossing_num + 1, 'U', '-'), (new_gc_crossing_num + 2, 'O', '-')] + new_gc[i:]
+							# first add the a side then the b side
+							gc_of_the_longitude += [(new_gc_crossing_num + 2, 'U', '-'), (new_gc_crossing_num + 1, 'O', '-')] 
+						elif turaev.same_crossing((b,"","" ), self.gauss_code[(j+1) % len(self.gauss_code)]):
+							# they appear on the second instance of a, a is left, b is right
+							i = turaev.fin_crossing(a, new_gc)
+							i = turaev.fin_crossing(a, new_gc, i+1)
+							# a -> new over + -> new under + -> possibly some meridian stuff -> b
+							new_gc = new_gc[:i+1] + [(new_gc_crossing_num + 1, 'O', '+'), (new_gc_crossing_num + 2, 'U', '+')] + new_gc[i+1:] 
+							# for longitude gc add first the a side then the b side
+							gc_of_the_longitude += [(new_gc_crossing_num + 1, 'U', '+'), (new_gc_crossing_num + 2, 'O', '+')]
+						elif turaev.same_crossing((b,"","" ), self.gauss_code[j-1]):
+							# they appear on the second instance of a, b is left, a is right
+							i = turaev.fin_crossing(a, new_gc)
+							i = turaev.fin_crossing(a, new_gc, i+1)
+							# b -> possibly some meridian stuff -> new under - -> new over - -> a
+							new_gc = new_gc[:i] + [(new_gc_crossing_num + 1, 'U', '-'), (new_gc_crossing_num + 2, 'O', '-')] + new_gc[i:]
+							# first add the a side then the b side
+							gc_of_the_longitude += [(new_gc_crossing_num + 2, 'U', '-'), (new_gc_crossing_num + 1, 'O', '-')] 
+				else:
+					# B IS RED
+					if arc_in_circles([z,a,b], self.a_smoothing):
+						# A IS RED
+						i = turaev.find_crossing(a, self.gauss_code)
+						j = turaev.find_crossing(a, self.gauss_code, i+1)
+						if turaev.same_crossing((b,"","" ), self.gauss_code[i+1]):
+							# they appear on the first instance of a, a is left, b is right
+							i = turaev.find_crossing(a, new_gc)
+							# a -> new over + -> new under + -> possibly some meridian stuff -> b
+							new_gc = new_gc[:i+1] + [(new_gc_crossing_num + 1, 'U', '-'), (new_gc_crossing_num + 2, 'O', '-')] + new_gc[i+1:] 
+							# for longitude gc add first the a side then the b side
+							gc_of_the_longitude += [(new_gc_crossing_num + 1, 'O', '-'), (new_gc_crossing_num + 2, 'U', '-')]
+						elif turaev.same_crossing((b,"","" ), self.gauss_code[(i-1) % len(self.gauss_code)]):
+							# they appear on the first instance of a, b is left, a is right
+							i = turaev.find_crossing(a, new_gc)
+							# b -> possibly some meridian stuff -> new under - -> new over - -> a
+							new_gc = new_gc[:i] + [(new_gc_crossing_num + 1, 'O', '+'), (new_gc_crossing_num + 2, 'U', '+')] + new_gc[i:]
+							# first add the a side then the b side
+							gc_of_the_longitude += [(new_gc_crossing_num + 2, 'O', '+'), (new_gc_crossing_num + 1, 'U', '+')] 
+						elif turaev.same_crossing((b,"","" ), self.gauss_code[(j+1) % len(self.gauss_code)]):
+							# they appear on the second instance of a, a is left, b is right
+							i = turaev.fin_crossing(a, new_gc)
+							i = turaev.fin_crossing(a, new_gc, i+1)
+							# a -> new over + -> new under + -> possibly some meridian stuff -> b
+							new_gc = new_gc[:i+1] + [(new_gc_crossing_num + 1, 'U', '-'), (new_gc_crossing_num + 2, 'O', '-')] + new_gc[i+1:] 
+							# for longitude gc add first the a side then the b side
+							gc_of_the_longitude += [(new_gc_crossing_num + 1, 'O', '-'), (new_gc_crossing_num + 2, 'U', '-')]
+						elif turaev.same_crossing((b,"","" ), self.gauss_code[j-1]):
+							# they appear on the second instance of a, b is left, a is right
+							i = turaev.fin_crossing(a, new_gc)
+							i = turaev.fin_crossing(a, new_gc, i+1)
+							# b -> possibly some meridian stuff -> new under - -> new over - -> a
+							new_gc = new_gc[:i] + [(new_gc_crossing_num + 1, 'O', '+'), (new_gc_crossing_num + 2, 'U', '+')] + new_gc[i:]
+							# first add the a side then the b side
+							gc_of_the_longitude += [(new_gc_crossing_num + 2, 'O', '+'), (new_gc_crossing_num + 1, 'U', '+')] 
+					else:
+						# A is also blue, do nothing
+						pass
 
 		self.gc_with_meridians = new_gc
 
