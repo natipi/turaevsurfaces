@@ -185,6 +185,6 @@ def process_code(raw_code):
 
 # computes turaev genus of a gauss code inputed as a string
 def turaev_genus(raw_code):
-	gc = process_code(raw_code)
+	gc = process_code(raw_code) if type(raw_code) is str else raw_code
 	if len(gc) == 0: return 0.0
 	else: return 0.5*(crossing_number(gc) - len(find_smoothing(gc, "a")) - len(find_smoothing(gc, "b")) + 2)

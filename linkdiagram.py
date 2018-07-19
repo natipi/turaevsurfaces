@@ -8,7 +8,7 @@
 # All of these use reduced Gauss codes (no obvious RI moves)
 
 import turaev
-import graph
+from graphclass import *
 
 from itertools import izip
 from copy import deepcopy # copy lists
@@ -335,7 +335,7 @@ class PlanarDiagram(LinkDiagram):
 		LinkDiagram.__init__(self, gc, safe)
 		self.a_smoothing = turaev.find_smoothing(self.gauss_code, "a")
 		self.b_smoothing = turaev.find_smoothing(self.gauss_code, "b")
-		self.dual_graph = graph.ColoredGraph()
+		self.dual_graph = ColoredGraph()
 		self.build_dual_graph()
 
 		# keep track of original crossing number for purposes of when we add new link components, knowing which crossings corresponded to the original
@@ -343,6 +343,8 @@ class PlanarDiagram(LinkDiagram):
 
 		self.holes = []
 		self.outside_hole = []
+
+		self.montesinos_gc = []
 
 		# self.atomic_regions = self. DONT NEED THIS BECAUSE THEYRE JUST THE VERTICES OF THE DUAL GRAPH
 		# self.holes
@@ -367,7 +369,7 @@ class PlanarDiagram(LinkDiagram):
 
 	# for genus <= 1
 	def add_montesino_link_small_genus(self):
-		g = turaev_genus(self.gauss_code)
+		g = turaev.turaev_genus(self.gauss_code)
 		if g == 0:
 			self.gc_with_meridians = self.gauss_code
 		elif g == 1:
@@ -375,25 +377,27 @@ class PlanarDiagram(LinkDiagram):
 			elif len(self.holes) != 1: raise Exception("There are more than g holes! Uh oh! Here's the knot that hecked up: "+str(self.gauss_code))
 
 			new_gc = deepcopy(self.gauss_code)
-			meridian_path = graph.shortest_path(self.dual_graph, self.outside_hole, self.holes[0])
+			meridian_path = shortest_path(self.dual_graph, self.outside_hole, self.holes[0])
 			gc_of_the_meridian = []
 
-			prev_left, prev_right = 0,0
+			prev_left, prev_right = -1,-1
 
 			# for each hole, find shortest path to outside. then add along the meeting faces of the vertices in the path. 
 			# be conscious that multiple meridians could get looped on the same arc
 			# the genus 1 case is different than the greater genus case! the genus 0 case is also different
 
+			print "Meridian path: "+str(meridian_path)
 			for edge in meridian_path:
 				new_gc_ln = len(new_gc)
 				new_gc_crossing_num = turaev.crossing_number(new_gc)
 
 				# see which arc the step in this path shares
 				arc = share_which_arc(edge[0],edge[1])
+				print "Arc: "+ str(arc)
 				if len(arc)!= 2: raise Exception("Uh oh! This arc is not length 2!: " + str(arc)+" What are you doing! ")
 				# find the arc in the gauss code
-				i = turaev.find_crossing(arc[0], new_gc)
-				j = turaev.find_crossing(arc[0], new_gc, i+1)
+				i = turaev.find_crossing((arc[0],"",""), new_gc)
+				j = turaev.find_crossing((arc[0],"",""), new_gc, i+1)
 				# figure out which is the arc endpoint on the left and right at the place where the arc occurs in the Gauss code
 				# same_crossing takes tuple inputs (num, "O/U", "+/-")
 				if turaev.same_crossing((arc[1],"","" ), new_gc[i+1]):
@@ -406,19 +410,23 @@ class PlanarDiagram(LinkDiagram):
 					left, right = j-1, j
 
 
+				# print "prev left, prev right, left, right: "+str([new_gc[prev_left][0],new_gc[prev_right][0],new_gc[left][0], new_gc[right][0]])
+				# print "cycle "+str(edge[0])
 				if (prev_left, prev_right) == (-1,-1):
 					new_gc = new_gc[:left+1] + [(new_gc_crossing_num + 1, 'O', '+'), (new_gc_crossing_num + 2, 'U', '+')] + new_gc[(new_gc_ln if right == 0 else right):] 
 					gc_of_the_meridian = [(new_gc_crossing_num + 1, 'U', '+')] + gc_of_the_meridian + [(new_gc_crossing_num + 2, 'O', '+')]
 				# if the cyclic order in edge[0] is prev_left->prev_right->left->right, then we add U-O- to the original knot component
-				elif cyclically_ordered_sublist_of_consecutive_pairs([new_gc[prev_left][0],new_gc[prev_right][0],new_gc[left][0], new_gc[right][0]], arc[0]):
+				elif cyclically_ordered_sublist_of_consecutive_pairs([new_gc[prev_left][0],new_gc[prev_right][0],new_gc[left][0], new_gc[right][0]], edge[0]):
+					# print "hi1"
 					new_gc = new_gc[:left+1] + [(new_gc_crossing_num + 1, 'U', '-'), (new_gc_crossing_num + 2, 'O', '-')] + new_gc[(new_gc_ln if right == 0 else right):] 
 					gc_of_the_meridian = [(new_gc_crossing_num + 2, 'U', '-')] + gc_of_the_meridian + [(new_gc_crossing_num + 1, 'O', '-')]
 				# if the cyclic order in edge[0] is prev_left->prev_right->right->left, then we add O+U+ to the original knot component
-				elif cyclically_ordered_sublist_of_consecutive_pairs([new_gc[prev_left][0],new_gc[prev_right][0], new_gc[right][0],new_gc[left][0]], arc[0]):
+				elif cyclically_ordered_sublist_of_consecutive_pairs([new_gc[prev_left][0],new_gc[prev_right][0], new_gc[right][0],new_gc[left][0]], edge[0]):
+					# print "hi2"
 					new_gc = new_gc[:left+1] + [(new_gc_crossing_num + 1, 'O', '+'), (new_gc_crossing_num + 2, 'U', '+')] + new_gc[(new_gc_ln if right == 0 else right):] 
 					gc_of_the_meridian = [(new_gc_crossing_num + 1, 'U', '+')] + gc_of_the_meridian + [(new_gc_crossing_num + 2, 'O', '+')]	
 
-				prev_left, prev_right = left, right
+				prev_left, prev_right = left, right + 2 #we've added 2 things in the middle of left, right
 
 
 			# for a consecutive triple of crossings a,b,c around the hole, we can find whether the longitude goes under or over b
@@ -446,7 +454,7 @@ class PlanarDiagram(LinkDiagram):
 				c = self.holes[0][(i+1) % n]
 
 				# z comes before a so we can look at the color of a and see if a->b changed
-				z = self.holes[(i-2) % n]
+				z = self.holes[0][(i-2) % n]
 
 				# consec in a red circle
 				if arc_in_circles([a,b,c], self.a_smoothing):
@@ -462,34 +470,34 @@ class PlanarDiagram(LinkDiagram):
 						# so any crossings that is greater than self.crossing_number should be ignored
 						# actually though maybe i can just find a, b in the original gauss code 
 
-						i = turaev.find_crossing(a, self.gauss_code)
-						j = turaev.find_crossing(a, self.gauss_code, i+1)
+						i = turaev.find_crossing((a,"",""), self.gauss_code)
+						j = turaev.find_crossing((a,"",""), self.gauss_code, i+1)
 						if turaev.same_crossing((b,"","" ), self.gauss_code[i+1]):
 							# they appear on the first instance of a, a is left, b is right
-							i = turaev.find_crossing(a, new_gc)
+							i = turaev.find_crossing((a,"",""), new_gc)
 							# a -> new over + -> new under + -> possibly some meridian stuff -> b
 							new_gc = new_gc[:i+1] + [(new_gc_crossing_num + 1, 'O', '+'), (new_gc_crossing_num + 2, 'U', '+')] + new_gc[i+1:] 
 							# for longitude gc add first the a side then the b side
 							gc_of_the_longitude += [(new_gc_crossing_num + 1, 'U', '+'), (new_gc_crossing_num + 2, 'O', '+')]
 						elif turaev.same_crossing((b,"","" ), self.gauss_code[(i-1) % len(self.gauss_code)]):
 							# they appear on the first instance of a, b is left, a is right
-							i = turaev.find_crossing(a, new_gc)
+							i = turaev.find_crossing((a,"",""), new_gc)
 							# b -> possibly some meridian stuff -> new under - -> new over - -> a
 							new_gc = new_gc[:i] + [(new_gc_crossing_num + 1, 'U', '-'), (new_gc_crossing_num + 2, 'O', '-')] + new_gc[i:]
 							# first add the a side then the b side
 							gc_of_the_longitude += [(new_gc_crossing_num + 2, 'U', '-'), (new_gc_crossing_num + 1, 'O', '-')] 
 						elif turaev.same_crossing((b,"","" ), self.gauss_code[(j+1) % len(self.gauss_code)]):
 							# they appear on the second instance of a, a is left, b is right
-							i = turaev.fin_crossing(a, new_gc)
-							i = turaev.fin_crossing(a, new_gc, i+1)
+							i = turaev.find_crossing((a,"",""), new_gc)
+							i = turaev.find_crossing((a,"",""), new_gc, i+1)
 							# a -> new over + -> new under + -> possibly some meridian stuff -> b
 							new_gc = new_gc[:i+1] + [(new_gc_crossing_num + 1, 'O', '+'), (new_gc_crossing_num + 2, 'U', '+')] + new_gc[i+1:] 
 							# for longitude gc add first the a side then the b side
 							gc_of_the_longitude += [(new_gc_crossing_num + 1, 'U', '+'), (new_gc_crossing_num + 2, 'O', '+')]
 						elif turaev.same_crossing((b,"","" ), self.gauss_code[j-1]):
 							# they appear on the second instance of a, b is left, a is right
-							i = turaev.fin_crossing(a, new_gc)
-							i = turaev.fin_crossing(a, new_gc, i+1)
+							i = turaev.find_crossing((a,"",""), new_gc)
+							i = turaev.find_crossing((a,"",""), new_gc, i+1)
 							# b -> possibly some meridian stuff -> new under - -> new over - -> a
 							new_gc = new_gc[:i] + [(new_gc_crossing_num + 1, 'U', '-'), (new_gc_crossing_num + 2, 'O', '-')] + new_gc[i:]
 							# first add the a side then the b side
@@ -498,34 +506,34 @@ class PlanarDiagram(LinkDiagram):
 					# B IS RED
 					if arc_in_circles([z,a,b], self.a_smoothing):
 						# A IS RED
-						i = turaev.find_crossing(a, self.gauss_code)
-						j = turaev.find_crossing(a, self.gauss_code, i+1)
+						i = turaev.find_crossing((a,"",""), self.gauss_code)
+						j = turaev.find_crossing((a,"",""), self.gauss_code, i+1)
 						if turaev.same_crossing((b,"","" ), self.gauss_code[i+1]):
 							# they appear on the first instance of a, a is left, b is right
-							i = turaev.find_crossing(a, new_gc)
+							i = turaev.find_crossing((a,"",""), new_gc)
 							# a -> new over + -> new under + -> possibly some meridian stuff -> b
 							new_gc = new_gc[:i+1] + [(new_gc_crossing_num + 1, 'U', '-'), (new_gc_crossing_num + 2, 'O', '-')] + new_gc[i+1:] 
 							# for longitude gc add first the a side then the b side
 							gc_of_the_longitude += [(new_gc_crossing_num + 1, 'O', '-'), (new_gc_crossing_num + 2, 'U', '-')]
 						elif turaev.same_crossing((b,"","" ), self.gauss_code[(i-1) % len(self.gauss_code)]):
 							# they appear on the first instance of a, b is left, a is right
-							i = turaev.find_crossing(a, new_gc)
+							i = turaev.find_crossing((a,"",""), new_gc)
 							# b -> possibly some meridian stuff -> new under - -> new over - -> a
 							new_gc = new_gc[:i] + [(new_gc_crossing_num + 1, 'O', '+'), (new_gc_crossing_num + 2, 'U', '+')] + new_gc[i:]
 							# first add the a side then the b side
 							gc_of_the_longitude += [(new_gc_crossing_num + 2, 'O', '+'), (new_gc_crossing_num + 1, 'U', '+')] 
 						elif turaev.same_crossing((b,"","" ), self.gauss_code[(j+1) % len(self.gauss_code)]):
 							# they appear on the second instance of a, a is left, b is right
-							i = turaev.fin_crossing(a, new_gc)
-							i = turaev.fin_crossing(a, new_gc, i+1)
+							i = turaev.find_crossing((a,"",""), new_gc)
+							i = turaev.find_crossing((a,"",""), new_gc, i+1)
 							# a -> new over + -> new under + -> possibly some meridian stuff -> b
 							new_gc = new_gc[:i+1] + [(new_gc_crossing_num + 1, 'U', '-'), (new_gc_crossing_num + 2, 'O', '-')] + new_gc[i+1:] 
 							# for longitude gc add first the a side then the b side
 							gc_of_the_longitude += [(new_gc_crossing_num + 1, 'O', '-'), (new_gc_crossing_num + 2, 'U', '-')]
 						elif turaev.same_crossing((b,"","" ), self.gauss_code[j-1]):
 							# they appear on the second instance of a, b is left, a is right
-							i = turaev.fin_crossing(a, new_gc)
-							i = turaev.fin_crossing(a, new_gc, i+1)
+							i = turaev.find_crossing((a,"",""), new_gc)
+							i = turaev.find_crossing((a,"",""), new_gc, i+1)
 							# b -> possibly some meridian stuff -> new under - -> new over - -> a
 							new_gc = new_gc[:i] + [(new_gc_crossing_num + 1, 'O', '+'), (new_gc_crossing_num + 2, 'U', '+')] + new_gc[i:]
 							# first add the a side then the b side
@@ -534,7 +542,23 @@ class PlanarDiagram(LinkDiagram):
 						# A is also blue, do nothing
 						pass
 
-		self.gc_with_meridians = new_gc
+		print "Longitude: "+str(gc_of_the_longitude)
+		print "Meridian: "+str(gc_of_the_meridian)
+		self.montesinos_gc = [new_gc, gc_of_the_meridian, gc_of_the_longitude]
 
 
 		# I will choose the outside to be whichever one has 1 in it and is longestt
+
+
+def test():
+	print "Declaring planar diagram ..."
+	J = PlanarDiagram([[1, 'O', '+'], [2, 'U', '+'], [3, 'O', '+'], [4, 'U', '+'], [5, 'U', '-'], [6, 'O', '-'], [7, 'O', '-'], [8, 'U', '-'], [4, 'O', '+'], [3, 'U', '+'], [8, 'O', '-'], [7, 'U', '-'], [9, 'O', '+'], [1, 'U', '+'], [2, 'O', '+'], [5, 'O', '-'], [6, 'U', '-'], [9, 'U', '+']])
+	print "Finding holes ..."
+	J.find_holes()
+	print "Holes are: "+str(J.holes)
+	print "Picking outside hole ..."
+	J.pick_outside_hole()
+	print "Outside hole is: "+str(J.outside_hole)
+	print "Adding montesino link ..."
+	J.add_montesino_link_small_genus()
+	print "The link is: "+str(J.montesinos_gc)
