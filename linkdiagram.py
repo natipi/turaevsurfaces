@@ -90,9 +90,6 @@ def make_alternating(gc):
 # "1+2-" format
 # def forget_crossings(gc):
 
-def test(gc):
-	gc = turaev.process_code(gc)
-	print turaev.find_smoothing(gc, "a")
 
 # def gc_is_virtual(gc):
 
