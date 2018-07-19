@@ -13,6 +13,56 @@ import graph
 from itertools import izip
 from copy import deepcopy # copy lists
 
+# cyclically ordered and not wrapping around twice
+# example, mod 7:
+# 3 5 0 1 is good
+# 2 5 0 4 is not good
+# but then we could also have counterclockwise cycles
+# if I want to NOT allow repeats in the cycles i should make these <='s
+def cyclically_ordered_mod_n(lst, n):
+	if len(lst) == 1 or len(lst) == 2: return True 
+	d = lst[1]-lst[0]
+	i = 2
+	m = len(lst)
+	while i < m:
+		if (lst[i]-lst[i-1])*d < 0 and (lst[0]-lst[i])*d < 0: return False 
+		i+= 1
+	return True 
+
+
+def cyclically_ordered_sublist_of_consecutive_pairs(sublist,lst):
+	i,k = 0,0
+	j,l = -1,-1
+	n = len(lst)
+	while i < n:
+		if [lst[i],lst[(i+1)%n]] == sublist[0:2]:
+			j = (i+1)%n
+			break
+		elif [lst[(i+1)%n], lst[i]] == sublist[0:2]:
+			j = i
+			i = i + 1
+			break
+		else:
+			i+= 1
+	# as of now, i is the position of sublist[0] and j is the position of sublist[1]
+
+	while k < n:
+		if [lst[k],lst[(k+1)%n]] == sublist[2:4]:
+			l = (k+1)%n
+			break
+		elif [lst[(k+1)%n], lst[k]] == sublist[2:4]:
+			l = k
+			k = k + 1
+			break
+		else:
+			k+= 1
+	# now k is the position of sublist[2] and l is the position of sublist[3]
+
+	if i == n or k == n or j == -1 or l == -1: return False
+
+	return cyclically_ordered_mod_n([i,j,k,l], n)
+
+
 # go through all pairs of a list
 def pairwise(iterable):
     "s -> (s0, s1), (s2, s3), (s4, s5), ..."
@@ -268,7 +318,10 @@ class PlanarDiagram(LinkDiagram):
 
 		# keep track of original crossing number for purposes of when we add new link components, knowing which crossings corresponded to the original
 		self.crossing_number = turaev.crossing_number(self.gauss_code)
-		
+
+		self.holes = []
+		self.outside_hole = []
+
 		# self.atomic_regions = self. DONT NEED THIS BECAUSE THEYRE JUST THE VERTICES OF THE DUAL GRAPH
 		# self.holes
 		# self.dual_graph
@@ -284,7 +337,72 @@ class PlanarDiagram(LinkDiagram):
 				holes += [vertex]
 			# elif len(self.dual_graph.vertices[vertex]) == 1:
 			# 	raise Exception("Vertex "+str(vertex)+" has only one side capped off (only one color).")
-		return holes 
+		self.holes = holes 
+
+	def pick_outside_hole(self):
+		self.outside_hole = max(self.holes, key=len)
+		self.holes.remove(self.outside_hole)
+
+	# for genus <= 1
+	def add_montesino_link_small_genus(self):
+		g = turaev_genus(self.gauss_code)
+		if g == 0:
+			self.gc_with_meridians = self.gauss_code
+		elif g == 1:
+			if self.outside_hole == [] or self.holes == []: raise Exception("Uh oh! You have not picked out holes!!!")
+			elif len(self.holes) != 1: raise Exception("There are more than g holes! Uh oh! Here's the knot that hecked up: "+str(self.gauss_code))
+
+			new_gc = deepcopy(self.gauss_code)
+			meridian_path = graph.shortest_path(self.dual_graph, self.outside_hole, self.holes[0])
+			gc_of_the_meridian = []
+
+			prev_left, prev_right = 0,0
+
+			for edge in meridian_path:
+				new_gc_ln = len(new_gc)
+				new_gc_crossing_num = turaev.crossing_number(new_gc)
+
+				# see which arc the step in this path shares
+				arc = share_which_arc(edge[0],edge[1])
+				if len(arc)!= 2: raise Exception("Uh oh! This arc is not length 2!: " + str(arc)+" What are you doing! ")
+				# find the arc in the gauss code
+				i = turaev.find_crossing(arc[0], new_gc)
+				j = turaev.find_crossing(arc[0], new_gc, i+1)
+				# figure out which is the arc endpoint on the left and right at the place where the arc occurs in the Gauss code
+				if turaev.same_crossing(arc[1], new_gc[i+1]):
+					left, right = i, i+1 
+				elif turaev.same_crossing(arc[1], new_gc[(i-1) % new_gc_ln]):
+					left, right = (i-1) % new_gc_ln, i
+				elif turaev.same_crossing(arc[1], new_gc[(j+1) % new_gc_ln]):
+					left, right = j, (j+1) % new_gc_ln
+				elif turaev.same_crossing(arc[1], new_gc[j-1]):
+					left, right = j-1, j
+
+
+				if (prev_left, prev_right) == (-1,-1):
+					new_gc = new_gc[:left+1] + [(new_gc_crossing_num + 1, 'O', '+'), (new_gc_crossing_num + 2, 'U', '+')] + new_gc[(n if right == 0 else right):] 
+					gc_of_the_meridian = [(new_gc_crossing_num + 1, 'U', '+')] + gc_of_the_meridian + [(new_gc_crossing_num + 2, 'O', '+')]
+				# if the cyclic order in edge[0] is prev_left->prev_right->left->right, then we add U-O- to the original knot component
+				elif cyclically_ordered_sublist_of_consecutive_pairs([new_gc[prev_left][0],new_gc[prev_right][0],new_gc[left][0], new_gc[right][0]], arc[0]):
+					new_gc = new_gc[:left+1] + [(new_gc_crossing_num + 1, 'U', '-'), (new_gc_crossing_num + 2, 'O', '-')] + new_gc[(n if right == 0 else right):] 
+					gc_of_the_meridian = [(new_gc_crossing_num + 2, 'U', '-')] + gc_of_the_meridian + [(new_gc_crossing_num + 1, 'O', '-')]
+				# if the cyclic order in edge[0] is prev_left->prev_right->right->left, then we add O+U+ to the original knot component
+				elif cyclically_ordered_sublist_of_consecutive_pairs([new_gc[prev_left][0],new_gc[prev_right][0], new_gc[right][0],new_gc[left][0]], arc[0]):
+					new_gc = new_gc[:left+1] + [(new_gc_crossing_num + 1, 'O', '+'), (new_gc_crossing_num + 2, 'U', '+')] + new_gc[(n if right == 0 else right):] 
+					gc_of_the_meridian = [(new_gc_crossing_num + 1, 'U', '+')] + gc_of_the_meridian + [(new_gc_crossing_num + 2, 'O', '+')]	
+
+				prev_left, prev_right = left, right
+
+			gc_of_the_longitude = []
+
+			
+
+
+		# for each hole, find shortest path to outside. then add along the meeting faces of the vertices in the path. 
+		# be conscious that multiple meridians could get looped on the same arc
+		# the genus 1 case is different than the greater genus case! the genus 0 case is also different
+
+		self.gc_with_meridians = new_gc
 
 
 		# I will choose the outside to be whichever one has 1 in it and is longestt
