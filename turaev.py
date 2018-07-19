@@ -151,9 +151,9 @@ def find_smoothing(code, smoothing_type):
 	i = 0
 	while i < n:
 		loop = find_loop(code, i, smoothing_type)
-		print loop
+		# print loop
 		if not contained(loop, loops, cyclic_compare):
-			print loop, "is not in", loops
+			# print loop, "is not in", loops
 			loops += [loop]
 		i +=1
 	return loops

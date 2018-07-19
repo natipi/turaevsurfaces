@@ -51,6 +51,32 @@ def share_arc(cycle1, cycle2):
 				i += 1
 	return False
 
+# returs the actual arc which they share
+def share_which_arc(cycle1, cycle2):
+	n = len(cycle1)
+	m = len(cycle2)
+	i = 0
+	while i < n:
+		# arc = cycle1[i:(i + 2) % n]
+		# wanna find this arc in cycle2
+		j = turaev.lst_find(cycle1[i], cycle2)
+		k = turaev.lst_find(cycle1[i], cycle2, j+1)
+		if j == -1 and k == -1: 
+			i += 1
+		elif j >= 0:
+			if (cycle2[(j + 1) % m] == cycle1[(i + 1) % n]) or (cycle2[(j - 1) % m] == cycle1[(i + 1) % n]): 
+				if i + 2 >= n: return cycle1[i:] + cycle1[:(i+2)%n]
+				else: return cycle1[i:i+2]
+			else: 
+				i += 1
+		elif k >= 0:
+			if (cycle2[(k + 1) % m] == cycle1[(i + 1) % n]) or (cycle2[(k - 1) % m] == cycle1[(i + 1) % n]): 
+				if i + 2 >= n: return cycle1[i:] + cycle1[:(i+2)%n]
+				else: return cycle1[i:i+2]
+			else: 
+				i += 1
+	return []
+
 # decomposes cycle into a sum of elements
 # every time we find a repeated crossing that is a valid split (i.e. is in "splits") 
 # in cycle, we decompose along it
@@ -154,7 +180,7 @@ def make_alternating(gc):
 
 def test(gc):
 	gc = turaev.process_code(gc)
-	print turaev.find_smoothing(gc, "a")
+	# print turaev.find_smoothing(gc, "a")
 
 # def gc_is_virtual(gc):
 
@@ -185,11 +211,11 @@ class PlanarDiagram(LinkDiagram):
 	def build_dual_graph(self):
 		# lists are passed by reference so I had to use deepcopy to pass by value
 		gc_alter = make_alternating(deepcopy(self.gauss_code))
-		print str(gc_alter)
+		# print str(gc_alter)
 		altern_a_smthing = turaev.find_smoothing(gc_alter, "a")
 		altern_b_smthing = turaev.find_smoothing(gc_alter, "b")
-		print "Alternating a smoothing: "+str(altern_a_smthing)
-		print "Alternating b smoothing: "+str(altern_b_smthing)
+		# print "Alternating a smoothing: "+str(altern_a_smthing)
+		# print "Alternating b smoothing: "+str(altern_b_smthing)
 		self.dual_graph.set_uncolored_vertices(altern_a_smthing + altern_b_smthing)
 
 		# add edge between each pair of regions that are connected by an arc
@@ -207,17 +233,17 @@ class PlanarDiagram(LinkDiagram):
 		b_cuts = []
 		for i in range(len(self.gauss_code)):
 			if gc_alter[i][1] == self.gauss_code[i][1]: 
-				print str(gc_alter[i])+"and"+str(self.gauss_code[i])
+				# print str(gc_alter[i])+"and"+str(self.gauss_code[i])
 				a_cuts += [self.gauss_code[i][0]]
 			else: b_cuts +=[self.gauss_code[i][0]]
 
-		print "B cuts: "+str(b_cuts)
+		# print "B cuts: "+str(b_cuts)
 
 		for region in self.a_smoothing:
 			# decompose this a_smoothing (red) region into its constituent atomic regions
 			basis_decomposition = decompose(region, a_cuts)
-			print "Basis decomposition of "+ str(region)+" in A smoothing:"
-			print "\t"+str(basis_decomposition)
+			# print "Basis decomposition of "+ str(region)+" in A smoothing:"
+			# print "\t"+str(basis_decomposition)
 			for loop in basis_decomposition:
 				# find these regions in the vertex list, in the order they appear in the cycle, using cyclic compare, and color the vertices
 				for vertex in self.dual_graph.vertices.keys():
@@ -225,8 +251,8 @@ class PlanarDiagram(LinkDiagram):
 						self.dual_graph.color_vertex(vertex, "red")
 		for region in self.b_smoothing:
 			basis_decomposition = decompose(region, b_cuts)
-			print "Basis decomposition of "+ str(region)+" in B smoothing:"
-			print "\t"+str(basis_decomposition)
+			# print "Basis decomposition of "+ str(region)+" in B smoothing:"
+			# print "\t"+str(basis_decomposition)
 			for loop in basis_decomposition:
 				for vertex in self.dual_graph.vertices.keys():
 					if turaev.cyclic_compare(loop, vertex):
@@ -239,6 +265,10 @@ class PlanarDiagram(LinkDiagram):
 		self.b_smoothing = turaev.find_smoothing(self.gauss_code, "b")
 		self.dual_graph = graph.ColoredGraph()
 		self.build_dual_graph()
+
+		# keep track of original crossing number for purposes of when we add new link components, knowing which crossings corresponded to the original
+		self.crossing_number = turaev.crossing_number(self.gauss_code)
+		
 		# self.atomic_regions = self. DONT NEED THIS BECAUSE THEYRE JUST THE VERTICES OF THE DUAL GRAPH
 		# self.holes
 		# self.dual_graph

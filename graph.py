@@ -50,3 +50,56 @@ class ColoredGraph:
 		else: 
 			self.vertices[vertex] = [color]
 
+
+
+# from collections import defaultdict
+# from heapq import *
+
+# def dijkstra(edges, f, t):
+#     g = defaultdict(list)
+#     for l,r,c in edges:
+#         g[l].append((c,r))
+
+#     q, seen, mins = [(0,f,())], set(), {f: 0}
+#     while q:
+#         (cost,v1,path) = heappop(q)
+#         if v1 not in seen:
+#             seen.add(v1)
+#             path = (v1, path)
+#             if v1 == t: return (cost, path)
+
+#             for c, v2 in g.get(v1, ()):
+#                 if v2 in seen: continue
+#                 prev = mins.get(v2, None)
+#                 next = cost + c
+#                 if prev is None or next < prev:
+#                     mins[v2] = next
+#                     heappush(q, (next, v2, path))
+
+#     return float("inf")
+
+def shortestpath(graph, a, b, visited = []):
+	possible_steps = []
+	possible_paths = []
+
+	for edge in graph.edges.keys():
+		if a in edge:
+			possible_steps += [edge]
+	for edge in possible_steps:
+		if b in edge:
+			return [edge]
+		else:
+			other = list(edge)
+			other.remove(a)
+			new_a = other[0]
+			if not (new_a in visited):
+				possible_paths += [[edge] + shortestpath(graph, new_a, b, visited + [a])]
+
+	if len(possible_paths) == 0:
+		# print "currently at: "+str(a)
+		# print "visited: "+str(visited)
+		# print "possible steps: "+str(possible_steps)
+		return [(0,0)]*(len(graph.vertices) + 1) 
+
+	return min(possible_paths, key=len)
+
