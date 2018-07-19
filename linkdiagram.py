@@ -63,6 +63,28 @@ def cyclically_ordered_sublist_of_consecutive_pairs(sublist,lst):
 	return cyclically_ordered_mod_n([i,j,k,l], n)
 
 
+# find whether a sublist or its reverse is in a list
+# where the list has at most 2 entries with a certain value (entries repeat at most once)
+def contains_unoriented_sublist(sublist, lst):
+	i = turaev.lst_find(sublist[0], lst)
+	if i == -1: return False 
+	j = turaev.lst_find(sublist[0], lst, i+1)
+	forward = True 
+	backward = True 
+	n = len(lst)
+	for step in range(1,len(sublist)):
+		if sublist[step] != lst[(i + step) % n] and sublist[step] != lst[(j + step) % n]: 
+			forward = False
+		if sublist[step] != lst[(i - step) % n] and sublist[step] != lst[(j - step) % n]: 
+			backward = False
+	return (forward or backward)
+
+# true if arc is in one of the circles in circle_list
+def arc_in_circles(arc, circle_list):
+	for circle in circle_list:
+		if contains_unoriented_sublist(arc, circle): return True
+	return False
+
 # go through all pairs of a list
 def pairwise(iterable):
     "s -> (s0, s1), (s2, s3), (s4, s5), ..."
@@ -358,6 +380,10 @@ class PlanarDiagram(LinkDiagram):
 
 			prev_left, prev_right = 0,0
 
+			# for each hole, find shortest path to outside. then add along the meeting faces of the vertices in the path. 
+			# be conscious that multiple meridians could get looped on the same arc
+			# the genus 1 case is different than the greater genus case! the genus 0 case is also different
+			
 			for edge in meridian_path:
 				new_gc_ln = len(new_gc)
 				new_gc_crossing_num = turaev.crossing_number(new_gc)
@@ -395,12 +421,27 @@ class PlanarDiagram(LinkDiagram):
 
 			gc_of_the_longitude = []
 
+			# for a consecutive triple of crossings a,b,c around the hole, we can find whether the longitude goes under or over b
+			# if a,b,c all appear consecutively in a red circle, b is a red crossing
+			# ELSE if a,b and b,c are in two different red circles or two disjoint portions of a red circle, b is a blue crossing (putting this else after the previous if is important, see knot 9_42)
+			# else if a,b,c appear consecutively in a blue circle, b is a blue crossing
+			# else if a,b and b,c appear on two different blue circles or two disjoint portions of a blue circle, b is a red crossing
 			
+			# for each crossing b in the hole
+			# i = 0
+			# n = len(self.holes[0])
+			# for i in range(n):
+			# 	b = self.holes[0][i]
+			# 	a = self.holes[0][(i-1) % n]
+			# 	c = self.holes[0][(i+1) % n]
 
+			# 	# consec in a red circle
+			# 	if arc_in_circles([a,b,c], self.a_smoothing):
+			# 		print "B is red"
+			# 	elif arc_in_circles([a,b], self.a_smoothing)
 
-		# for each hole, find shortest path to outside. then add along the meeting faces of the vertices in the path. 
-		# be conscious that multiple meridians could get looped on the same arc
-		# the genus 1 case is different than the greater genus case! the genus 0 case is also different
+			# NOPE THIS IS INCORRECT THIS DOESNT DETERMINE THE COLOR
+
 
 		self.gc_with_meridians = new_gc
 
