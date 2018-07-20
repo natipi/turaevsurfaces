@@ -398,6 +398,7 @@ class PlanarDiagram(LinkDiagram):
 				# find the arc in the gauss code
 				i = turaev.find_crossing((arc[0],"",""), new_gc)
 				j = turaev.find_crossing((arc[0],"",""), new_gc, i+1)
+				
 				# figure out which is the arc endpoint on the left and right at the place where the arc occurs in the Gauss code
 				# same_crossing takes tuple inputs (num, "O/U", "+/-")
 				if turaev.same_crossing((arc[1],"","" ), new_gc[i+1]):
