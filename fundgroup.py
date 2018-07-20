@@ -25,7 +25,6 @@ def process_code(raw_code):
 		length = len(raw_entry)
 		proc_entry = [int(raw_entry[0:(length - 2)]), raw_entry[(length - 2): (length - 1)], raw_entry[(length - 1) : length]]
 		gc.append(proc_entry)
-	gc = reduce_code(gc)
 	return gc
 
 # Checks if processed Gauss code is valid
@@ -95,6 +94,7 @@ def constr_bouqet(graph):
 def constr_turaev_state(graph):
 	a_smoothing, b_smoothing = [], []
 	for smoothing_type in ["a", "b"]:
+		print("smoothing_type= " + smoothing_type)
 		edges = copy.deepcopy(graph.edges)
 		for starting_edge in edges:
 			if starting_edge in edges:
@@ -129,17 +129,17 @@ def constr_turaev_state(graph):
 									next_edge = edge
 									forward = True
 									break
-					if prev_edge == next_edge:
-						raise Exception("Mayday, mayday: coder's smoothing skills ain't shit")
+					# if prev_edge == next_edge:
+					# 	raise Exception("Mayday, mayday: coder's smoothing skills ain't shit")
 					prev_edge = next_edge
 				if smoothing_type == "a": a_smoothing.append(loop)
 				else: b_smoothing.append(loop)
 				edges = [edge for edge in edges if edge not in loop]
 		edges = copy.deepcopy(graph.edges)
-	print("a_smoothing =") 
-	print a_smoothing
-	print("\n b_smoothing=")
-	print b_smoothing
+	# print("a_smoothing =") 
+	# print a_smoothing
+	# print("\n b_smoothing=")
+	# print b_smoothing
 # Given a raw Gauss code (string), this function returns a reduced presentation 
 # of the fundamental group of the associated Turaev surface
 def fund_group(raw_code):
