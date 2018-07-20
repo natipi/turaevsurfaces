@@ -275,16 +275,6 @@ class LinkDiagram:
 
 # Classical link diagrams
 class PlanarDiagram(LinkDiagram):
-	# self.dual_graph = graph.ColoredGraph()
-<<<<<<< HEAD
-
-	# def build_dual_graph(self):
-	# 	gc_alter = make_alternating(gc)
-	# 	altern_a_smthing = find_smoothing(gc, "a")
-	# 	altern_b_smthing = find_smoothing(gc, "b")
-	# 	print alter_a_smthing
-	# 	self.dual_graph.set_vertices(altern_a_smthing + altern_b_smthing)
-=======
  
 	def build_dual_graph(self):
 		# lists are passed by reference so I had to use deepcopy to pass by value
@@ -302,7 +292,6 @@ class PlanarDiagram(LinkDiagram):
 			for b_region in altern_b_smthing:
 				if share_arc(a_region, b_region):
 					self.dual_graph.add_edge(a_region, b_region)
->>>>>>> bcbd88fcf638903bce5e269c82d19cb8a9868044
 
 		# Now to color the vertices
 		# for red (A-smoothing) circles, cut accross the crossings that didn't change relative to the alternating gauss code
@@ -405,17 +394,27 @@ class PlanarDiagram(LinkDiagram):
 				# find the arc in the gauss code
 				i = turaev.find_crossing((arc[0],"",""), new_gc)
 				j = turaev.find_crossing((arc[0],"",""), new_gc, i+1)
-				
+
+				left,right = -1,-1
 				# figure out which is the arc endpoint on the left and right at the place where the arc occurs in the Gauss code
 				# same_crossing takes tuple inputs (num, "O/U", "+/-")
 				if turaev.same_crossing((arc[1],"","" ), new_gc[i+1]):
 					left, right = i, i+1 
-				elif turaev.same_crossing((arc[1],"","" ), new_gc[(i-1) % new_gc_ln]):
+				if turaev.same_crossing((arc[1],"","" ), new_gc[(i-1) % new_gc_ln]):
 					left, right = (i-1) % new_gc_ln, i
-				elif turaev.same_crossing((arc[1],"","" ), new_gc[(j+1) % new_gc_ln]):
-					left, right = j, (j+1) % new_gc_ln
-				elif turaev.same_crossing((arc[1],"","" ), new_gc[j-1]):
-					left, right = j-1, j
+				if turaev.same_crossing((arc[1],"","" ), new_gc[(j+1) % new_gc_ln]):
+					if (left, right) != -1,-1:
+						# the arc happens twice. 
+						# want the one that doesnt occur right after another crossing in edge[0]
+						# i dont think this casework is airtight oops
+						# cause what if i just have a braid oh lmao big rip
+					else: 
+						left, right = j, (j+1) % new_gc_ln
+				if turaev.same_crossing((arc[1],"","" ), new_gc[j-1]):
+					if (left, right) != -1,-1:
+						# the arc happens twice
+					else:
+						left, right = j-1, j
 
 
 				# print "prev left, prev right, left, right: "+str([new_gc[prev_left][0],new_gc[prev_right][0],new_gc[left][0], new_gc[right][0]])
