@@ -275,16 +275,6 @@ class LinkDiagram:
 
 # Classical link diagrams
 class PlanarDiagram(LinkDiagram):
-	# self.dual_graph = graph.ColoredGraph()
-<<<<<<< HEAD
-
-	# def build_dual_graph(self):
-	# 	gc_alter = make_alternating(gc)
-	# 	altern_a_smthing = find_smoothing(gc, "a")
-	# 	altern_b_smthing = find_smoothing(gc, "b")
-	# 	print alter_a_smthing
-	# 	self.dual_graph.set_vertices(altern_a_smthing + altern_b_smthing)
-=======
  
 	def build_dual_graph(self):
 		# lists are passed by reference so I had to use deepcopy to pass by value
@@ -302,7 +292,6 @@ class PlanarDiagram(LinkDiagram):
 			for b_region in altern_b_smthing:
 				if share_arc(a_region, b_region):
 					self.dual_graph.add_edge(a_region, b_region)
->>>>>>> bcbd88fcf638903bce5e269c82d19cb8a9868044
 
 		# Now to color the vertices
 		# for red (A-smoothing) circles, cut accross the crossings that didn't change relative to the alternating gauss code
