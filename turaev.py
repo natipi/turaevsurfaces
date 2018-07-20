@@ -151,10 +151,11 @@ def find_smoothing(code, smoothing_type):
 	i = 0
 	while i < n:
 		loop = find_loop(code, i, smoothing_type)
+		# print loop
 		if not contained(loop, loops, cyclic_compare):
 			# print loop, "is not in", loops
 			loops += [loop]
-		i +=2
+		i +=1
 	return loops
 
 #performs all trivial type 1 reidemeister simplifications.
@@ -184,6 +185,6 @@ def process_code(raw_code):
 
 # computes turaev genus of a gauss code inputed as a string
 def turaev_genus(raw_code):
-	gc = process_code(raw_code)
+	gc = process_code(raw_code) if type(raw_code) is str else raw_code
 	if len(gc) == 0: return 0.0
 	else: return 0.5*(crossing_number(gc) - len(find_smoothing(gc, "a")) - len(find_smoothing(gc, "b")) + 2)
