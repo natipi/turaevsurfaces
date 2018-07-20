@@ -115,14 +115,14 @@ class LinkDiagram:
 
 # Classical link diagrams
 class PlanarDiagram(LinkDiagram):
-	self.dual_graph = graph.ColoredGraph()
+	# self.dual_graph = graph.ColoredGraph()
 
-	def build_dual_graph(self):
-		gc_alter = make_alternating(gc)
-		altern_a_smthing = find_smoothing(gc, "a")
-		altern_b_smthing = find_smoothing(gc, "b")
-		print alter_a_smthing
-		self.dual_graph.set_vertices(altern_a_smthing + altern_b_smthing)
+	# def build_dual_graph(self):
+	# 	gc_alter = make_alternating(gc)
+	# 	altern_a_smthing = find_smoothing(gc, "a")
+	# 	altern_b_smthing = find_smoothing(gc, "b")
+	# 	print alter_a_smthing
+	# 	self.dual_graph.set_vertices(altern_a_smthing + altern_b_smthing)
 
 
 
