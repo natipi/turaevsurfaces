@@ -398,17 +398,27 @@ class PlanarDiagram(LinkDiagram):
 				# find the arc in the gauss code
 				i = turaev.find_crossing((arc[0],"",""), new_gc)
 				j = turaev.find_crossing((arc[0],"",""), new_gc, i+1)
-				
+
+				left,right = -1,-1
 				# figure out which is the arc endpoint on the left and right at the place where the arc occurs in the Gauss code
 				# same_crossing takes tuple inputs (num, "O/U", "+/-")
 				if turaev.same_crossing((arc[1],"","" ), new_gc[i+1]):
 					left, right = i, i+1 
-				elif turaev.same_crossing((arc[1],"","" ), new_gc[(i-1) % new_gc_ln]):
+				if turaev.same_crossing((arc[1],"","" ), new_gc[(i-1) % new_gc_ln]):
 					left, right = (i-1) % new_gc_ln, i
-				elif turaev.same_crossing((arc[1],"","" ), new_gc[(j+1) % new_gc_ln]):
-					left, right = j, (j+1) % new_gc_ln
-				elif turaev.same_crossing((arc[1],"","" ), new_gc[j-1]):
-					left, right = j-1, j
+				if turaev.same_crossing((arc[1],"","" ), new_gc[(j+1) % new_gc_ln]):
+					if (left, right) != -1,-1:
+						# the arc happens twice. 
+						# want the one that doesnt occur right after another crossing in edge[0]
+						# i dont think this casework is airtight oops
+						# cause what if i just have a braid oh lmao big rip
+					else: 
+						left, right = j, (j+1) % new_gc_ln
+				if turaev.same_crossing((arc[1],"","" ), new_gc[j-1]):
+					if (left, right) != -1,-1:
+						# the arc happens twice
+					else:
+						left, right = j-1, j
 
 
 				# print "prev left, prev right, left, right: "+str([new_gc[prev_left][0],new_gc[prev_right][0],new_gc[left][0], new_gc[right][0]])
