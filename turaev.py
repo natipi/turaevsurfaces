@@ -10,6 +10,7 @@
 
 from linkdiagram import *
 
+
 # search obj in lst using compare_function
 def contained(obj, lst, compare_function):
 	for thing in lst:
@@ -91,7 +92,8 @@ def cyclic_compare(s1, s2):
 # move to next crossing according to direction
 # unit tested (5 ish cases)
 # get to a crossing -> check if done -> change strands -> toggle direction -> move
-def find_loop(code, i, smoothing_type):
+# keep_crossing_info gives option to keep the over/unders. keep_writhe_info gives option to keep the +/-'s
+def find_loop(code, i, smoothing_type, keep_crossing_info = True, keep_writhe_info = False):
 	# toggle direction (with or against the grain)
 	forward = True
 	n = len(code)
@@ -105,7 +107,14 @@ def find_loop(code, i, smoothing_type):
 
 	# as we traverse a certain circle in the state, we will record it here
 	# in order to count circles later on
-	statecircle = [code[i][0]]
+	if keep_crossing_info and keep_writhe_info:
+		statecircle = [code[i]]
+	elif keep_crossing_info and not keep_writhe_info:
+		statecircle = [code[i][0:2]]
+	elif not keep_crossing_info and keep_writhe_info:
+		statecircle = [code[i][0], code[i][2]]
+	else:
+		statecircle = [code[i][0]]
 	
 	# traversal index
 	j = i
@@ -136,7 +145,14 @@ def find_loop(code, i, smoothing_type):
 			j = (j - 1) % n
 		
 		# Step 4: Get to a crossing and record it in the state circle
-		statecircle += [code[j][0]]
+		if keep_crossing_info and keep_writhe_info:
+			statecircle += [code[j]]
+		elif keep_crossing_info and not keep_writhe_info:
+			statecircle += [code[j][0:2]]
+		elif not keep_crossing_info and keep_writhe_info:
+			statecircle += [code[j][0], code[j][2]]
+		else:
+			statecircle += [code[j][0]]
 
 		# Step 5: check if done
 		if j == i and forward:	
@@ -145,12 +161,12 @@ def find_loop(code, i, smoothing_type):
 	return statecircle[:-1]
 
 # calculates the amount of circles in the state with smoothing_type 
-def find_smoothing(code, smoothing_type):
+def find_smoothing(code, smoothing_type, keep_crossing_info = True, keep_writhe_info = False):
 	n = len(code)
 	loops = []
 	i = 0
 	while i < n:
-		loop = find_loop(code, i, smoothing_type)
+		loop = find_loop(code, i, smoothing_type, keep_crossing_info, keep_writhe_info)
 		# print loop
 		if not contained(loop, loops, cyclic_compare):
 			# print loop, "is not in", loops
